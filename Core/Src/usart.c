@@ -164,7 +164,7 @@ void updateDCValues(uint32_t avg){
 	if(num_graph > MAXGRAPH) num_graph = MAXGRAPH;
 
 	usart_esc("[9;25H");
-	usart_esc("[0K");
+	usart_esc("[1K");
 
 	usart_esc("[9;0H");
 	for(int i = 0; i < num_graph; i++) { usart_print("#"); }

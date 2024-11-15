@@ -8,8 +8,8 @@
 //
 #define COMP_HYST_VAL 0x2
 #define SAMPLE_DC_RATE 100
-#define SAMPLE_AC_RATE 2000
-#define OUTPUT_RATE 20
+#define SAMPLE_AC_RATE 10000
+#define OUTPUT_RATE 100
 #define SAMPLE_CLK_CNT 1200
 #define MAX16BIT 65535
 #define NUMFREQCNT 10
@@ -89,7 +89,7 @@ int main(void)
   uint16_t p2p = 0;
   uint32_t avg = 0;
   uint32_t dc_avg = 0;
-  uint32_t rms_avg = 0;
+  uint64_t rms_avg = 0;
   uint32_t ac_avg = 0;
 
   clear_scrn();
