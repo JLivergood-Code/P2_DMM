@@ -8,11 +8,11 @@
 //
 #define COMP_HYST_VAL 0x2
 #define SAMPLE_DC_RATE 100
-#define SAMPLE_AC_RATE 10000
+#define SAMPLE_AC_RATE 15000
 #define OUTPUT_RATE 100
 #define SAMPLE_CLK_CNT 1200
 #define MAX16BIT 65535
-#define NUMFREQCNT 10
+#define NUMFREQCNT 20
 
 #define MAXDAC 4095
 #define MINVAL 0
@@ -155,7 +155,8 @@ int main(void)
 
 			  if(freq_cnt == 0) freq_cnt = 1;
 			  freq_avg = (freq_sum / freq_cnt);
-			  p2p = 2 * (max - ac_avg);
+			  p2p = 2 * (max-ac_avg);
+//			  p2p = max - min;
 
 
 			  updateACValues(p2p, rms_avg, freq_avg);
@@ -165,6 +166,8 @@ int main(void)
 			  max = 0;
 			  min = MAX16BIT;
 			  rms_avg = 0;
+//			  freq_sum = 0;
+//			  freq_cnt = 0;
 
 
 		  } // end cnt == SAMPLE_RATE

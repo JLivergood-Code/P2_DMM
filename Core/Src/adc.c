@@ -59,7 +59,7 @@ void adc_init(void){
 	// includes Single Conversion mode enabled
 	ADC1->CFGR = 0;
 	ADC1->SMPR1 &= ~(ADC_SMPR1_SMP5);
-	ADC1->SMPR1 |= (0x0 << ADC_SMPR1_SMP5_Pos);
+	ADC1->SMPR1 |= (0x3 << ADC_SMPR1_SMP5_Pos);
 
 	//configure interrupts
 	// configures end of conversion interrupt
