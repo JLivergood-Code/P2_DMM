@@ -7,10 +7,10 @@
 
 #include "adc.h"
 
-#define SLOPE_CAL_LAPTOP 818
-#define INTERCEPT_CAL_LAPTOP 12600
-#define SLOPE_CAL_DESKTOP 818
-#define INTERCEPT_CAL_DESKTOP 12600
+#define SLOPE_CAL_LAPTOP 798
+#define INTERCEPT_CAL_LAPTOP 11100
+#define SLOPE_CAL_DESKTOP 822
+#define INTERCEPT_CAL_DESKTOP 98500
 #define SCALE_CAL 10000
 
 /* Macro for which device I am using for calibration

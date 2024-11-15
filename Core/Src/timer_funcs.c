@@ -109,30 +109,3 @@ void GPIO_init(void) {
 
 
 }
-
-
-// Set in MAIN
-//void TIM2_IRQHandler(void) {
-//	//The TIMx_CCR1 register gets the value of the counter on the active transition.
-//	//rising edge detected
-//	// CC1OF is also set if at least two consecutive captures occurred whereas the flag was not cleared
-//	  if(TIM2->SR &  & TIM_SR_CC4IF){ //check flag for capture \ compare
-//		  //clear flag
-//		TIM2->SR &= ~(TIM_SR_CC4IF);
-//		currTime = TIM2->CCR4;  // Read the current captured value
-//		if(currTime >= prevTime){
-//			// if the current value is greater than the previous, the period is the difference between them
-//			period = currTime - prevTime;
-//		}
-//		else{
-//			//if the current time is not greater than the previous time, we have either time-traveled or the timer has overflowed
-//			 period = 0xFFFF - prevTime + currTime;
-//		}
-//		prevTime = currTime;  // Update prevTime for next period measurement
-//
-//		if (period != 0) {
-//			freq =  SystemCoreClock / (TIM2->PSC + 1) / period;  // Calculate frequency
-//		}
-//		 ;
-//	  }
-//}

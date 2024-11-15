@@ -7,8 +7,9 @@
 #include <math.h>
 //
 #define COMP_HYST_VAL 0x2
-#define SAMPLE_RATE 10000
-#define OUTPUT_RATE 10000
+#define SAMPLE_DC_RATE 100
+#define SAMPLE_AC_RATE 2000
+#define OUTPUT_RATE 20
 #define SAMPLE_CLK_CNT 1200
 #define MAX16BIT 65535
 #define NUMFREQCNT 10
@@ -81,14 +82,18 @@ int main(void)
   __enable_irq();
 
 
-  uint8_t firstConv = 0;
+  uint8_t numDCConv = 0;
   uint16_t arr_cnt = 0;
   uint16_t max = 0;
   uint16_t min = MAX16BIT;
   uint16_t p2p = 0;
   uint32_t avg = 0;
+  uint32_t dc_avg = 0;
   uint32_t rms_avg = 0;
+  uint32_t ac_avg = 0;
 
+  clear_scrn();
+  write_divider();
 
   while (1) {
 	  // checks if adcFlag is set
@@ -97,7 +102,7 @@ int main(void)
 //		  send_dac((uint16_t)1000);
 		  // sets current position in array to the measured ADC value
 //		  adc_arr[arr_cnt] = adcData;
-		  arr_cnt++;
+
 
 		  // checks to see if the measured value is the max or min value
 		  if(adcData > max){
@@ -109,47 +114,56 @@ int main(void)
 
 		  // adds current adc value to avg
 		  avg += adcData;
+		  ac_avg += adcData;
 
 		  // adds the squared value to the rms_average
 		  rms_avg += (adcData * adcData);
 
-		  // every 100 samples, computes average and rms_average
-		  if(arr_cnt == SAMPLE_RATE){
-			  //calculate average
-			  avg /= SAMPLE_RATE;
+		  arr_cnt++;
 
-			  rms_avg /= SAMPLE_RATE;
+
+
+		  // every 100 samples, computes average and rms_average
+		  if((arr_cnt % SAMPLE_DC_RATE) == 0){
+			  //calculate average
+			  avg /= SAMPLE_DC_RATE;
+			  if(avg > 4095) { send_dac(MAXDAC); }
+			  //			  else if(avg < 0) { send_dac(MINDAC); }
+			  else { send_dac((uint16_t)avg); }
+
+			  dc_avg += avg;
+			  numDCConv++;
+			  avg = 0;
+
+			  if(numDCConv == OUTPUT_RATE){
+				  dc_avg /= numDCConv;
+				  updateDCValues(dc_avg);
+
+				  dc_avg = 0;
+				  numDCConv = 0;
+			  }
+		  }
+
+
+		  if(arr_cnt == SAMPLE_AC_RATE){
+
+			  ac_avg /= SAMPLE_AC_RATE;
+			  rms_avg /= SAMPLE_AC_RATE;
 			  rms_avg = (uint32_t) sqrt(rms_avg);
 
-			  // if it is the first conversion, sends data to DAC to set Vref for Comparator
-
-//			  if(firstConv == 0){
-			  if(avg > 4095) { send_dac(MAXDAC); }
-//			  else if(avg < 0) { send_dac(MINDAC); }
-			  else { send_dac((uint16_t)avg); }
-//			  }
 
 
-			  /*======================================================================
-			  * Format DMM
-			  *
-			  * Design AC and DC side
-			  * Build Graphs, but do not populate
-			  */
-			  p2p = max - min;
-			  updateValues(max, p2p, rms_avg);
-
+			  if(freq_cnt == 0) freq_cnt = 1;
 			  freq_avg = (freq_sum / freq_cnt);
+			  p2p = 2 * (max - ac_avg);
 
-			  updateFreq(freq_avg);
 
+			  updateACValues(p2p, rms_avg, freq_avg);
 
 			  // reset values for next 20 readings
 			  arr_cnt = 0;
-			  firstConv++;
 			  max = 0;
 			  min = MAX16BIT;
-			  avg = 0;
 			  rms_avg = 0;
 
 

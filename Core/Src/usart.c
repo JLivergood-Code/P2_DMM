@@ -101,25 +101,35 @@ void clear_scrn(void){
 }
 
 void write_divider(void){
-	usart_print("=====================================================");
-	usart_esc("[#1");
-	usart_print("=====================================================");
-	usart_esc("[3;26H");
+	usart_print("=========================================================");
+	usart_esc("[1E");
+	usart_print("=========================================================");
+	usart_esc("[3;28H");
 
 	for(int i = 0; i < NUMROWS; i++){
 		usart_print("|");
 		usart_esc("[1B");
 		usart_esc("[1D");
 	}
+	usart_esc("[1E");
+	usart_print("=========================================================");
+	usart_esc("[1E");
+	usart_print("=========================================================");
 
-	usart_print("=====================================================");
-	usart_esc("[#1");
-	usart_print("=====================================================");
+	usart_esc("[10;0H");
+	usart_print("|---|---|---|---|---|---|");
+	usart_esc("[11;0H");
+	usart_print("0  0.5 1.0 1.5 2.0 2.5 3.0");
+
+	usart_esc("[10;30H");
+	usart_print("|---|---|---|---|---|---|");
+	usart_esc("[11;30H");
+	usart_print("0  0.5 1.0 1.5 2.0 2.5 3.0");
 
 }
 
 
-void write_terminal_int(uint32_t in_val, char *valType, uint8_t isFlt=TRUE){
+void write_terminal_int(uint32_t in_val, char *valType, uint8_t isFlt){
 	 // largest value is 65534 digits + 1 for safety
 	 char *int_str = malloc(7);
 	 intToStr(in_val, int_str, isFlt);
@@ -147,57 +157,65 @@ void updateDCValues(uint32_t avg){
 
 	usart_esc("[4;22H");
 	usart_esc("[1K");
-
-	write_terminal_int(avg, "DC Avg (V): ", TRUE);
+	usart_esc("[4;0H");
+	write_terminal_int(curCalVal, "DC Avg (V): ", TRUE);
 
 	num_graph = (MAXGRAPH * avg) / MAXmV;
+	if(num_graph > MAXGRAPH) num_graph = MAXGRAPH;
 
-	usart_esc("[0;27H");
+	usart_esc("[9;25H");
+	usart_esc("[0K");
+
+	usart_esc("[9;0H");
 	for(int i = 0; i < num_graph; i++) { usart_print("#"); }
 
-	usart_esc("[0;27H");
-	usart_print("|---|---|---|---|---|---|");
-	usart_esc("[0;27H");
-	usart_print("0  0.5 1.0 1.5 2.0 2.5 3.0");
+
 
 }
 
 void updateACValues(uint16_t p2p, uint16_t rms_avg, uint32_t freq){
 	uint32_t curCalVal = 0;
-	uint8_t numGraph = 0;
+	uint8_t num_graph = 0;
 
-//	clear_scrn();
+//	================================================================
+	// peak 2 peak value calibration and output
 
 	curCalVal = calibrateValue((uint16_t) p2p);
 
-	usart_esc("[4;27H");
+	usart_esc("[4;30H");
 	usart_esc("[0K");
 
-	write_terminal_int(p2p, "Peak to Peak (V): ", TRUE);
+	write_terminal_int(curCalVal, "Peak to Peak (V): ", TRUE);
+
+	//========================================================
+	// Frequency Output
 
 	curCalVal = calibrateValue((uint16_t) freq);
 
-	usart_esc("[5;27H");
+	usart_esc("[5;30H");
 	usart_esc("[0K");
 
 	write_terminal_int(freq, "Frequency (Hz): ", TRUE);
 
+	//=========================================================
+	// RMS Avg calibartion and output
+
 	curCalVal = calibrateValue((uint16_t) rms_avg);
 
-	usart_esc("[7;27H");
+	usart_esc("[7;30H");
 	usart_esc("[0K");
 
-	write_terminal_int(rms_avg, "AC RMS Avg (V): ", TRUE);
+	write_terminal_int(curCalVal, "AC RMS Avg (V): ", TRUE);
 
-	num_graph = (MAXGRAPH * rms_avg) / MAXmV;
+	num_graph = (MAXGRAPH * curCalVal) / MAXmV;
+	if(num_graph > MAXGRAPH) num_graph = MAXGRAPH;
 
-	usart_esc("[9;27H");
+	usart_esc("[9;30H");
+	usart_esc("[0K");
 	for(int i = 0; i < num_graph; i++) { usart_print("#"); }
 
-	usart_esc("[10;27H");
-	usart_print("|---|---|---|---|---|---|");
-	usart_esc("[11;27H");
-	usart_print("0  0.5 1.0 1.5 2.0 2.5 3.0");
+
+
 
 }
 
