@@ -8,7 +8,7 @@
 #include "adc.h"
 
 #define SLOPE_CAL_LAPTOP 798
-#define INTERCEPT_CAL_LAPTOP 11100
+#define INTERCEPT_CAL_LAPTOP 9100
 #define SLOPE_CAL_DESKTOP 822
 #define INTERCEPT_CAL_DESKTOP 98500
 #define SCALE_CAL 10000
@@ -59,7 +59,7 @@ void adc_init(void){
 	// includes Single Conversion mode enabled
 	ADC1->CFGR = 0;
 	ADC1->SMPR1 &= ~(ADC_SMPR1_SMP5);
-	ADC1->SMPR1 |= (0x3 << ADC_SMPR1_SMP5_Pos);
+	ADC1->SMPR1 |= (0x0 << ADC_SMPR1_SMP5_Pos);
 
 	//configure interrupts
 	// configures end of conversion interrupt

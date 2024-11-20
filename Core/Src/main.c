@@ -6,14 +6,15 @@
 
 #include <math.h>
 //
-#define COMP_HYST_VAL 0x2
+#define COMP_HYST_VAL 0x3
 #define SAMPLE_DC_RATE 100
-#define SAMPLE_AC_RATE 15000
+#define SAMPLE_AC_RATE 20000
 #define OUTPUT_RATE 100
 #define SAMPLE_CLK_CNT 1200
 #define MAX16BIT 65535
 #define NUMFREQCNT 20
 
+#define BITS3V 3722
 #define MAXDAC 4095
 #define MINVAL 0
 
@@ -84,13 +85,17 @@ int main(void)
 
   uint8_t numDCConv = 0;
   uint16_t arr_cnt = 0;
-  uint16_t max = 0;
-  uint16_t min = MAX16BIT;
+  uint32_t max = 0;
+  uint16_t mx_cnt = 0;
+  uint16_t mn_cnt = 0;
+  uint32_t min = 0;
   uint16_t p2p = 0;
   uint32_t avg = 0;
   uint32_t dc_avg = 0;
   uint64_t rms_avg = 0;
   uint32_t ac_avg = 0;
+
+//  uint32_t freq_out = 0;
 
   clear_scrn();
   write_divider();
@@ -105,11 +110,16 @@ int main(void)
 
 
 		  // checks to see if the measured value is the max or min value
-		  if(adcData > max){
-			  max = adcData;
+		  // COMP1->CSR & COMP_CSR_VALUE &&
+		  if( COMP1->CSR & COMP_CSR_VALUE){
+			  max += adcData;
+			  mx_cnt++;
 		  }
-		  if(adcData < min) {
-			  min = adcData;
+
+//		  !(COMP1->CSR & COMP_CSR_VALUE) &&
+		  if( !(COMP1->CSR & COMP_CSR_VALUE)){
+			  min += adcData;
+			  mn_cnt++;
 		  }
 
 		  // adds current adc value to avg
@@ -127,9 +137,7 @@ int main(void)
 		  if((arr_cnt % SAMPLE_DC_RATE) == 0){
 			  //calculate average
 			  avg /= SAMPLE_DC_RATE;
-			  if(avg > 4095) { send_dac(MAXDAC); }
-			  //			  else if(avg < 0) { send_dac(MINDAC); }
-			  else { send_dac((uint16_t)avg); }
+
 
 			  dc_avg += avg;
 			  numDCConv++;
@@ -151,11 +159,30 @@ int main(void)
 			  rms_avg /= SAMPLE_AC_RATE;
 			  rms_avg = (uint32_t) sqrt(rms_avg);
 
+			  if(rms_avg > MAXDAC) { send_dac(MAXDAC); }
+			  			  //			  else if(avg < 0) { send_dac(MINDAC); }
+			  else { send_dac((uint16_t)rms_avg); }
 
+			  if(freq_cnt != 0) {
+				  freq_avg = (freq_sum / freq_cnt);
+//				  freq_sum = 0;
+//				  freq_cnt = 0;
 
-			  if(freq_cnt == 0) freq_cnt = 1;
-			  freq_avg = (freq_sum / freq_cnt);
-			  p2p = 2 * (max-ac_avg);
+			  }
+
+//			  if(freq_avg > 1100) {
+//				  freq_avg = freq_avg;
+//			  }
+			  //if(max > 3722) {max = 3722;}
+
+			  if(mx_cnt != 0){
+				  max /= mx_cnt;
+			  }
+			  if(mn_cnt != 0){
+				  min /= mn_cnt;
+			  }
+
+			  p2p = 1.604 * (max-min);
 //			  p2p = max - min;
 
 
@@ -164,8 +191,13 @@ int main(void)
 			  // reset values for next 20 readings
 			  arr_cnt = 0;
 			  max = 0;
-			  min = MAX16BIT;
+			  mx_cnt = 0;
+			  min = 0;
+			  mn_cnt = 0;
 			  rms_avg = 0;
+			  ac_avg = 0;
+			  freq_sum = 0;
+			  freq_cnt = 0;
 //			  freq_sum = 0;
 //			  freq_cnt = 0;
 
@@ -209,27 +241,27 @@ void TIM2_IRQHandler(void) {
 	//The TIMx_CCR1 register gets the value of the counter on the active transition.
 	//rising edge detected
 	// CC1OF is also set if at least two consecutive captures occurred whereas the flag was not cleared
-	  if(TIM2->SR & TIM_SR_CC4IF){ //check flag for capture \ compare
-		  //clear flag
+	if(TIM2->SR & TIM_SR_CC4IF){ //check flag for capture \ compare
+	  //clear flag
 
-		currTime = TIM2->CCR4;  // Read the current captured value
-		if(currTime >= prevTime){
-			// if the current value is greater than the previous, the period is the difference between them
-			period = currTime - prevTime;
-		}
-		else{
-			//if the current time is not greater than the previous time, we have either time-traveled or the timer has overflowed
-			 period = -1 - prevTime + currTime;
-		}
-		prevTime = currTime;  // Update prevTime for next period measurement
+	currTime = TIM2->CCR4;  // Read the current captured value
+	if(currTime >= prevTime){
+		// if the current value is greater than the previous, the period is the difference between them
+		period = currTime - prevTime;
+	}
+	else{
+		//if the current time is not greater than the previous time, we have either time-traveled or the timer has overflowed
+		 period = -1 - prevTime + currTime;
+	}
+	prevTime = currTime;  // Update prevTime for next period measurement
 
-		if (period != 0) {
-			freq_calc =  (SystemCoreClock*100) / ( period);  // Calculate frequency (TIM2->PSC + 1) *(TIM2->PSC + 1) *
-			freq_sum += freq_calc;
-			freq_cnt++;
-		}
-		TIM2->SR &= ~(TIM_SR_CC4IF);
-	  }
+	if (period != 0) {
+		freq_calc =  (SystemCoreClock*100) / ( period);  // Calculate frequency (TIM2->PSC + 1) *(TIM2->PSC + 1) *
+		freq_sum += freq_calc;
+		freq_cnt++;
+	}
+	TIM2->SR &= ~(TIM_SR_CC4IF);
+  }
 }
 
 /*

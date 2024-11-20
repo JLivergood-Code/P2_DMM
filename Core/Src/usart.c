@@ -11,8 +11,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define MAXmV 330
-#define MAXGRAPH 24
+#define MAXmV 300
+#define MAXGRAPH 26
 #define NUMROWS 10
 
 void usart_init(void){
@@ -101,6 +101,8 @@ void clear_scrn(void){
 }
 
 void write_divider(void){
+	usart_esc("[?25l");
+
 	usart_print("=========================================================");
 	usart_esc("[1E");
 	usart_print("=========================================================");
@@ -152,7 +154,7 @@ void updateFreq(uint32_t in_freq){
 
 void updateDCValues(uint32_t avg){
 	uint32_t curCalVal = 0;
-	uint8_t num_graph = 0;
+	uint8_t num_dc_graph = 0;
 	curCalVal = calibrateValue((uint16_t) avg);
 
 	usart_esc("[4;22H");
@@ -160,14 +162,14 @@ void updateDCValues(uint32_t avg){
 	usart_esc("[4;0H");
 	write_terminal_int(curCalVal, "DC Avg (V): ", TRUE);
 
-	num_graph = (MAXGRAPH * avg) / MAXmV;
-	if(num_graph > MAXGRAPH) num_graph = MAXGRAPH;
+	num_dc_graph = (MAXGRAPH * curCalVal) / MAXmV;
+	if(num_dc_graph > MAXGRAPH) num_dc_graph = MAXGRAPH;
 
 	usart_esc("[9;25H");
 	usart_esc("[1K");
 
 	usart_esc("[9;0H");
-	for(int i = 0; i < num_graph; i++) { usart_print("#"); }
+	for(int i = 0; i < num_dc_graph; i++) { usart_print("#"); }
 
 
 
@@ -239,6 +241,9 @@ void intToStr(uint32_t N, char *str, uint8_t isFlt) {
       	// it in the str
         str[i++] = N % 10 + '0';
       	N /= 10;
+    }
+    if(i < NUM_DECIMAL){
+    	str[i++] = '0';
     }
     if(isFlt && i == NUM_DECIMAL) {
     	str[i++] = '.';
